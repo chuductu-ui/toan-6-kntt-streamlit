@@ -128,6 +128,43 @@ class CurriculumService:
 
         return pt_id
 
+    @staticmethod
+    def delete_problem_type(problem_type_id: str) -> bool:
+        """Delete a problem type and its associated practice records and SRS item."""
+        conn = get_connection()
+        cursor = conn.cursor()
+
+        # Check if problem type has an image to remove
+        cursor.execute("SELECT image_path FROM problem_types WHERE id = ?", (problem_type_id,))
+        row = cursor.fetchone()
+        img_to_delete = row["image_path"] if row and row["image_path"] else None
+
+        # Delete problem type (cascades to practice_records and srs_items)
+        cursor.execute("DELETE FROM problem_types WHERE id = ?", (problem_type_id,))
+        deleted = cursor.rowcount > 0
+        conn.commit()
+        conn.close()
+
+        # Clean up local image file
+        if img_to_delete:
+            from config import UPLOADS_DIR
+            local_file = UPLOADS_DIR / img_to_delete
+            if local_file.exists():
+                try:
+                    local_file.unlink()
+                except Exception:
+                    pass
+
+        # Sync to Google Drive if configured
+        try:
+            from src.gdrive_sync import GDriveSync, is_gdrive_configured
+            if is_gdrive_configured():
+                GDriveSync.upload_db_to_gdrive()
+        except Exception as e:
+            print(f"Cloud GDrive sync on delete skipped: {e}")
+
+        return deleted
+
 
 class PracticeService:
     """Service for handling exercise snapshots, logs, and SRS calculations."""

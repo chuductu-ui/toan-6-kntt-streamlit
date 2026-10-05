@@ -58,6 +58,9 @@ def test_add_custom_problem_type():
     assert pt["is_custom"] == 1
     assert pt["image_path"] == "test_sample_image.jpg"
 
+    # Cleanup
+    CurriculumService.delete_problem_type(new_id)
+
 
 def test_practice_recording_and_srs_update():
     """Verify recording practice updates SRS table correctly."""
@@ -142,3 +145,53 @@ def test_save_snapshot_image():
 
     # Cleanup test image
     saved_file.unlink(missing_ok=True)
+
+
+def test_delete_problem_type():
+    """Verify deleting a problem type removes it and cascades properly."""
+    concepts = CurriculumService.get_concepts_by_lesson("bai-01")
+    c_id = concepts[0]["id"]
+
+    # 1. Create a custom problem type
+    pt_id = CurriculumService.add_custom_problem_type(
+        concept_id=c_id,
+        title="Dạng toán cần xóa thử nghiệm",
+        method="Phương pháp thử nghiệm",
+        difficulty="Cơ bản"
+    )
+    assert pt_id is not None
+    assert CurriculumService.get_problem_type_by_id(pt_id) is not None
+
+    # 2. Record a practice for it (which creates record and srs_item)
+    PracticeService.record_practice(
+        problem_type_id=pt_id,
+        practice_date=date.today(),
+        mastery_level=MasteryLevel.INDEPENDENT,
+        notes="Thử nghiệm xóa"
+    )
+
+    # Verify srs item exists
+    conn = get_connection()
+    c = conn.cursor()
+    c.execute("SELECT * FROM srs_items WHERE problem_type_id = ?", (pt_id,))
+    assert c.fetchone() is not None
+    c.execute("SELECT * FROM practice_records WHERE problem_type_id = ?", (pt_id,))
+    assert len(c.fetchall()) > 0
+    conn.close()
+
+    # 3. Delete the problem type
+    deleted = CurriculumService.delete_problem_type(pt_id)
+    assert deleted is True
+
+    # 4. Verify problem type is gone
+    assert CurriculumService.get_problem_type_by_id(pt_id) is None
+
+    # 5. Verify cascade deleted srs_items and practice_records
+    conn = get_connection()
+    c = conn.cursor()
+    c.execute("SELECT * FROM srs_items WHERE problem_type_id = ?", (pt_id,))
+    assert c.fetchone() is None
+    c.execute("SELECT * FROM practice_records WHERE problem_type_id = ?", (pt_id,))
+    assert len(c.fetchall()) == 0
+    conn.close()
+

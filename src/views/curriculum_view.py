@@ -90,10 +90,19 @@ def render_curriculum_view():
 
                 with c_act:
                     st.write("")
-                    if st.button("✍️ Ghi nhận bài", key=f"curric_btn_{pt['id']}", use_container_width=True, type="primary"):
+                    if st.button("✍️ Ghi nhận", key=f"curric_btn_{pt['id']}", use_container_width=True, type="primary"):
                         st.session_state["selected_problem_id"] = pt["id"]
                         st.session_state["current_page"] = "✍️ Ghi Nhận Luyện Tập"
                         st.rerun()
+
+                    with st.popover("🗑️ Xóa", use_container_width=True):
+                        st.warning("⚠️ Xác nhận xóa dạng toán này? Toàn bộ nhật ký luyện tập và tiến độ ôn tập liên quan sẽ bị xóa.")
+                        if st.button("Xác nhận xóa", key=f"del_confirm_{pt['id']}", type="primary", use_container_width=True):
+                            CurriculumService.delete_problem_type(pt["id"])
+                            if st.session_state.get("selected_problem_id") == pt["id"]:
+                                del st.session_state["selected_problem_id"]
+                            st.toast("✅ Đã xóa dạng toán thành công!")
+                            st.rerun()
 
     # 5. Add Custom Problem Type (Supports Camera, File Upload, and Text)
     with st.expander("➕ Thêm Dạng Toán Mới Cho Bài Học Này (Hỗ Trợ Chụp Ảnh / Camera / Upload)", expanded=False):
