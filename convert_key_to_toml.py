@@ -29,8 +29,10 @@ def convert_json_to_toml(json_path: Path):
     print()
     print('[gcp_service_account]')
     for k, v in data.items():
-        if isinstance(v, str):
-            v_escaped = v.replace('\\', '\\\\').replace('"', '\\"').replace('\n', '\\n')
+        if k == 'private_key':
+            print(f'private_key = """{v}"""')
+        elif isinstance(v, str):
+            v_escaped = v.replace('\\', '\\\\').replace('"', '\\"')
             print(f'{k} = "{v_escaped}"')
         else:
             print(f'{k} = {v}')
