@@ -15,6 +15,7 @@ UPLOADS_DIR.mkdir(parents=True, exist_ok=True)
 # App branding and metadata
 APP_TITLE = "Vườn Toán Lớp 6 - Học Cùng Con"
 APP_SUBTITLE = "Hệ thống theo dõi kiến thức Toán 6 & Lặp lại ngắt quãng (Spaced Repetition)"
+APP_URL = "https://toan-6-kntt-app.streamlit.app"
 
 # SRS Default Parameters
 DEFAULT_EASE_FACTOR = 2.5

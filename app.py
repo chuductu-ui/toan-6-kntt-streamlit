@@ -97,23 +97,23 @@ with st.sidebar:
         """)
 
     # Mobile Access QR Code & Link
-    with st.expander("📱 Mở Trên Điện Thoại / iPad", expanded=False):
-        mobile_url = "http://192.168.1.3:8501"
-        st.markdown("**Quét mã QR để mở ngay:**")
+    with st.expander("📱 Mở Trên Điện Thoại / iPad (Online 24/7)", expanded=True):
+        from config import APP_URL
+        st.markdown("**Quét mã QR để mở ngay ứng dụng:**")
         try:
             import io
             import qrcode
-            qr = qrcode.QRCode(box_size=3, border=2)
-            qr.add_data(mobile_url)
+            qr = qrcode.QRCode(box_size=4, border=2)
+            qr.add_data(APP_URL)
             qr.make(fit=True)
             img = qr.make_image(fill_color="black", back_color="white")
             buf = io.BytesIO()
             img.save(buf, format="PNG")
-            st.image(buf.getvalue(), caption="Quét bằng Camera iPhone/iPad", width=180)
+            st.image(buf.getvalue(), caption="Quét bằng Camera iPhone/iPad", width=200)
         except Exception as e:
             pass
-        st.markdown(f"Hoặc nhập địa chỉ:\n`{mobile_url}`")
-        st.caption("*(Yêu cầu: Kết nối chung mạng Wi-Fi với máy tính)*")
+        st.markdown(f"👉 **Link trực tiếp:** [{APP_URL}]({APP_URL})")
+        st.caption("*(Truy cập mượt mà trên mọi thiết bị và mạng 4G/5G/Wi-Fi mọi lúc mọi nơi)*")
 
     st.caption("👨‍👧 Dành cho bố Chu Đức Tú & Con gái")
     st.caption("Bộ sách: Kết nối tri thức với cuộc sống")
