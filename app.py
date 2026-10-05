@@ -28,10 +28,16 @@ except Exception as e:
     print(f"GDrive initial sync check: {e}")
 
 init_db()
-# Auto-seed if database is empty
-stats_check = PracticeService.get_dashboard_stats()
-if stats_check["total_problems"] == 0:
-    seed_database()
+# Auto-seed curriculum structure (Chapters, Lessons, Concepts) if database is brand new
+from src.database import get_connection
+_conn = get_connection()
+_c = _conn.cursor()
+_c.execute("SELECT COUNT(*) FROM chapters")
+_has_chapters = _c.fetchone()[0] > 0
+_conn.close()
+
+if not _has_chapters:
+    seed_database(include_problem_types=False)
 
 # 3. View Imports
 from src.views import (

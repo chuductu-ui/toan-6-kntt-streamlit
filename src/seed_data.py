@@ -423,8 +423,8 @@ LESSONS_DATA = [
 ]
 
 
-def seed_database() -> Dict[str, int]:
-    """Seed all curriculum data and advanced math problem types into SQLite database."""
+def seed_database(include_problem_types: bool = False) -> Dict[str, int]:
+    """Seed all curriculum data and optionally advanced math problem types into SQLite database."""
     init_db()
     conn = get_connection()
     cursor = conn.cursor()
@@ -439,7 +439,7 @@ def seed_database() -> Dict[str, int]:
         """, (ch["id"], ch["volume"], ch["code"], ch["title"], ch["order_num"]))
         counts["chapters"] += 1
 
-    # 2. Insert Lessons, Concepts, and Advanced Problem Types
+    # 2. Insert Lessons, Concepts, and optionally Problem Types
     for l_idx, lesson in enumerate(LESSONS_DATA):
         cursor.execute("""
             INSERT OR REPLACE INTO lessons (id, chapter_id, title, pages, order_num, kind)
@@ -462,21 +462,22 @@ def seed_database() -> Dict[str, int]:
         ))
         counts["concepts"] += 1
 
-        # Insert Pre-seeded Advanced Problem Types
-        adv_list = lesson.get("adv_problems", [])
-        for p_idx, prob in enumerate(adv_list):
-            prob_id = f"pt_{lesson['id']}_{p_idx+1}"
-            cursor.execute("""
-                INSERT OR REPLACE INTO problem_types (id, concept_id, title, method, difficulty, is_custom)
-                VALUES (?, ?, ?, ?, ?, 0)
-            """, (
-                prob_id,
-                concept_id,
-                prob["title"],
-                prob.get("method", ""),
-                prob.get("difficulty", "Nâng cao")
-            ))
-            counts["problem_types"] += 1
+        # Insert Problem Types only if explicitly requested
+        if include_problem_types:
+            adv_list = lesson.get("adv_problems", [])
+            for p_idx, prob in enumerate(adv_list):
+                prob_id = f"pt_{lesson['id']}_{p_idx+1}"
+                cursor.execute("""
+                    INSERT OR REPLACE INTO problem_types (id, concept_id, title, method, difficulty, is_custom)
+                    VALUES (?, ?, ?, ?, ?, 0)
+                """, (
+                    prob_id,
+                    concept_id,
+                    prob["title"],
+                    prob.get("method", ""),
+                    prob.get("difficulty", "Nâng cao")
+                ))
+                counts["problem_types"] += 1
 
     conn.commit()
     conn.close()

@@ -32,10 +32,9 @@ def test_database_curriculum_queries(tmp_path):
     concepts = CurriculumService.get_concepts_by_lesson("bai-01")
     assert len(concepts) >= 1
 
-    # Problem types for lesson 1
+    # Problem types for lesson 1 (initially empty before user/daughter adds them)
     pt_list = CurriculumService.get_problem_types_by_concept(concepts[0]["id"])
-    assert len(pt_list) >= 1
-    assert "tập hợp" in pt_list[0]["title"].lower()
+    assert isinstance(pt_list, list)
 
 
 def test_add_custom_problem_type():
@@ -64,8 +63,15 @@ def test_add_custom_problem_type():
 
 def test_practice_recording_and_srs_update():
     """Verify recording practice updates SRS table correctly."""
+    concepts = CurriculumService.get_concepts_by_lesson("bai-01")
+    c_id = concepts[0]["id"]
+    pt_id = CurriculumService.add_custom_problem_type(
+        concept_id=c_id,
+        title="Dạng toán kiểm thử SRS",
+        difficulty="Nâng cao"
+    )
+
     today = date(2026, 10, 5)
-    pt_id = "pt_bai-01_1"
 
     # Attempt 1: Independent solve
     res1 = PracticeService.record_practice(
@@ -100,10 +106,20 @@ def test_practice_recording_and_srs_update():
     assert res3["interval_days"] == 1
     assert res3["next_review"] == today + timedelta(days=5)
 
+    # Cleanup
+    CurriculumService.delete_problem_type(pt_id)
+
 
 def test_get_due_problem_types():
     """Verify querying due problem types for a specific date."""
-    pt_id = "pt_bai-02_1"
+    concepts = CurriculumService.get_concepts_by_lesson("bai-02")
+    c_id = concepts[0]["id"]
+    pt_id = CurriculumService.add_custom_problem_type(
+        concept_id=c_id,
+        title="Dạng toán kiểm thử hạn SRS",
+        difficulty="Cơ bản"
+    )
+
     test_date = date(2026, 10, 5)
 
     # Record practice with hinted (due next day: 2026-10-06)
@@ -122,6 +138,9 @@ def test_get_due_problem_types():
     due_tomorrow = PracticeService.get_due_problem_types(current_date=test_date + timedelta(days=1))
     due_ids_tomorrow = [d["id"] for d in due_tomorrow]
     assert pt_id in due_ids_tomorrow
+
+    # Cleanup
+    CurriculumService.delete_problem_type(pt_id)
 
 
 def test_save_snapshot_image():
