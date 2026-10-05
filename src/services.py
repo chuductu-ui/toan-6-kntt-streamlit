@@ -102,16 +102,17 @@ class CurriculumService:
         concept_id: str,
         title: str,
         method: str = "",
-        difficulty: str = "Nâng cao"
+        difficulty: str = "Nâng cao",
+        image_path: Optional[str] = None
     ) -> str:
-        """Add a custom user-defined problem type."""
+        """Add a custom user-defined problem type with optional snapshot image."""
         conn = get_connection()
         cursor = conn.cursor()
         pt_id = f"custom_pt_{uuid.uuid4().hex[:8]}"
         cursor.execute("""
-            INSERT INTO problem_types (id, concept_id, title, method, difficulty, is_custom)
-            VALUES (?, ?, ?, ?, ?, 1)
-        """, (pt_id, concept_id, title.strip(), method.strip(), difficulty))
+            INSERT INTO problem_types (id, concept_id, title, method, difficulty, image_path, is_custom)
+            VALUES (?, ?, ?, ?, ?, ?, 1)
+        """, (pt_id, concept_id, title.strip(), method.strip(), difficulty, image_path))
         conn.commit()
         conn.close()
 
@@ -119,6 +120,8 @@ class CurriculumService:
         try:
             from src.gdrive_sync import GDriveSync, is_gdrive_configured
             if is_gdrive_configured():
+                if image_path:
+                    GDriveSync.upload_image_to_gdrive(image_path)
                 GDriveSync.upload_db_to_gdrive()
         except Exception as e:
             print(f"Cloud GDrive sync skipped: {e}")
@@ -260,7 +263,7 @@ class PracticeService:
         conn = get_connection()
         cursor = conn.cursor()
         cursor.execute("""
-            SELECT pt.id, pt.title AS problem_title, pt.method, pt.difficulty,
+            SELECT pt.id, pt.title AS problem_title, pt.method, pt.difficulty, pt.image_path,
                    c.title AS concept_title, l.id AS lesson_id, l.title AS lesson_title,
                    ch.code AS chapter_code, ch.title AS chapter_title, ch.volume,
                    s.interval_days, s.repetitions, s.ease_factor, s.last_practiced, s.next_review, s.status,
@@ -284,7 +287,7 @@ class PracticeService:
         conn = get_connection()
         cursor = conn.cursor()
         cursor.execute("""
-            SELECT pt.id, pt.title AS problem_title, pt.method, pt.difficulty,
+            SELECT pt.id, pt.title AS problem_title, pt.method, pt.difficulty, pt.image_path,
                    c.title AS concept_title, l.title AS lesson_title, ch.code AS chapter_code,
                    s.interval_days, s.repetitions, s.last_practiced, s.next_review, s.status,
                    (julianday(s.next_review) - julianday(?)) AS days_ahead

@@ -79,6 +79,14 @@ def render_practice_view():
             if active_pt.get("method"):
                 st.markdown(f"💡 **Phương pháp / Gợi ý giải:** {active_pt['method']}")
             st.caption(f"Trực thuộc bài: {active_pt['lesson_title']} | Độ khó: {active_pt['difficulty']}")
+
+            # Display problem reference image if exists
+            if active_pt.get("image_path"):
+                from config import UPLOADS_DIR
+                ref_img = UPLOADS_DIR / active_pt["image_path"]
+                if ref_img.exists():
+                    with st.expander("📸 Xem ảnh đề bài / công thức gốc của dạng toán này", expanded=True):
+                        st.image(str(ref_img), caption=f"Đề bài: {active_pt['title']}", use_container_width=True)
         with col_s:
             next_rev = active_pt.get("next_review")
             if next_rev:

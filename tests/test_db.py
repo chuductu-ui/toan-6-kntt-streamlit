@@ -47,7 +47,8 @@ def test_add_custom_problem_type():
         concept_id=c_id,
         title="Dạng toán tự chế về số chia hết đặc biệt",
         method="Sử dụng sơ đồ Ven để phân chia tập hợp",
-        difficulty="Nâng cao"
+        difficulty="Nâng cao",
+        image_path="test_sample_image.jpg"
     )
     assert new_id.startswith("custom_pt_")
 
@@ -55,6 +56,7 @@ def test_add_custom_problem_type():
     assert pt is not None
     assert pt["title"] == "Dạng toán tự chế về số chia hết đặc biệt"
     assert pt["is_custom"] == 1
+    assert pt["image_path"] == "test_sample_image.jpg"
 
 
 def test_practice_recording_and_srs_update():

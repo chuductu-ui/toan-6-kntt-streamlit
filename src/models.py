@@ -54,6 +54,7 @@ class ProblemType:
     title: str
     method: str = ""             # Phương pháp giải / công thức / mẹo
     difficulty: str = "Nâng cao" # "Cơ bản", "Nâng cao", "Thực tế"
+    image_path: Optional[str] = None # Ảnh chụp đề bài / công thức dạng toán
     is_custom: bool = False      # True nếu do phụ huynh tự thêm
     created_at: Optional[datetime] = None
 

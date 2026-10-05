@@ -66,11 +66,18 @@ def init_db(db_path: Optional[Path] = None) -> None:
         title TEXT NOT NULL,
         method TEXT,
         difficulty TEXT DEFAULT 'Nâng cao',
+        image_path TEXT,
         is_custom INTEGER DEFAULT 0,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (concept_id) REFERENCES concepts(id) ON DELETE CASCADE
     );
     """)
+
+    # Migration: add image_path if missing from previous version
+    try:
+        cursor.execute("ALTER TABLE problem_types ADD COLUMN image_path TEXT;")
+    except Exception:
+        pass
 
     # Table 5: Practice Records (Lịch sử từng lần con làm bài)
     cursor.execute("""

@@ -76,6 +76,13 @@ def render_review_view():
                 with st.expander("💡 Bấm để xem Phương pháp / Công thức gợi ý", expanded=False):
                     st.markdown(item.get("method") or "Chưa có gợi ý.")
 
+                # Reference image of problem type
+                if item.get("image_path"):
+                    ref_img = UPLOADS_DIR / item["image_path"]
+                    if ref_img.exists():
+                        with st.expander("📸 Xem ảnh đề bài / công thức gốc", expanded=False):
+                            st.image(str(ref_img), caption="Đề bài gốc của dạng toán", use_container_width=True)
+
                 # View past snapshot images
                 history = PracticeService.get_practice_history(problem_type_id=item_id, limit=3)
                 images = [h for h in history if h.get("image_path")]

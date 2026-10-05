@@ -23,6 +23,8 @@ apprepo20260906/
 # Streamlit secrets (keep local secrets private)
 .streamlit/secrets.toml
 *.json
+secrets_for_streamlit.txt
+gen_official_secrets.py
 
 # Temp files
 *.log
