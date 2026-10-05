@@ -3,6 +3,9 @@
 import streamlit as st
 from datetime import date
 
+# Cloud Application URL
+APP_URL = "https://toan-6-kntt-app.streamlit.app"
+
 # 1. Page Configuration (Wide layout, responsive for desktop & tablet)
 st.set_page_config(
     page_title="Vườn Toán Lớp 6 - Học Cùng Con",
@@ -98,7 +101,6 @@ with st.sidebar:
 
     # Mobile Access QR Code & Link
     with st.expander("📱 Mở Trên Điện Thoại / iPad (Online 24/7)", expanded=True):
-        from config import APP_URL
         st.markdown("**Quét mã QR để mở ngay ứng dụng:**")
         try:
             import io
