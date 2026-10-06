@@ -180,16 +180,21 @@ class PracticeService:
             return None
 
         try:
-            # Handle both Streamlit UploadedFile and raw bytes
-            if hasattr(uploaded_file, "read"):
+            # Handle PIL Image, Streamlit UploadedFile, bytes, and BytesIO
+            if isinstance(uploaded_file, Image.Image):
+                img = uploaded_file.copy()
+            elif hasattr(uploaded_file, "read"):
                 image_bytes = uploaded_file.read()
+                img = Image.open(io.BytesIO(image_bytes))
+            elif isinstance(uploaded_file, (bytes, bytearray)):
+                img = Image.open(io.BytesIO(uploaded_file))
+            elif isinstance(uploaded_file, io.BytesIO):
+                img = Image.open(uploaded_file)
             else:
-                image_bytes = uploaded_file
+                img = Image.open(io.BytesIO(uploaded_file))
 
-            img = Image.open(io.BytesIO(image_bytes))
-
-            # Convert RGBA to RGB for JPEG saving if necessary
-            if img.mode in ("RGBA", "P"):
+            # Convert non-RGB modes to RGB for JPEG saving
+            if img.mode != "RGB":
                 img = img.convert("RGB")
 
             # Resize if too large while preserving aspect ratio

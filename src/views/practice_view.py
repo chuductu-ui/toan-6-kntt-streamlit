@@ -129,13 +129,64 @@ def render_practice_view():
         snapshot_method = st.radio(
             "Phương thức chụp/tải ảnh:",
             options=["upload", "camera"],
-            format_func=lambda x: "📁 Tải file ảnh lên từ máy tính/điện thoại" if x == "upload" else "📷 Chụp trực tiếp bằng Webcam/Camera",
+            format_func=lambda x: "📁 Tải file ảnh hoặc Dán từ Clipboard" if x == "upload" else "📷 Chụp trực tiếp bằng Webcam/Camera",
             horizontal=True
         )
 
         image_data = None
+        prac_pasted_key = "practice_pasted_image"
+
         if snapshot_method == "upload":
-            image_data = st.file_uploader("Chọn ảnh bài tập/bài giải (PNG, JPG, JPEG):", type=["png", "jpg", "jpeg", "webp"])
+            uploaded_prac_img = st.file_uploader("Chọn ảnh bài tập/bài giải (PNG, JPG, JPEG):", type=["png", "jpg", "jpeg", "webp"], key="prac_upload_file")
+            
+            # Clipboard paste buttons
+            st.markdown("**📋 Hoặc Dán ảnh từ Clipboard:**")
+            try:
+                from streamlit_paste_button import paste_image_button
+                p_res = paste_image_button(
+                    label="📋 Click để dán ảnh Clipboard",
+                    background_color="#1976D2",
+                    hover_background_color="#0D47A1",
+                    key="prac_paste_btn"
+                )
+                if p_res and p_res.image_data is not None:
+                    st.session_state[prac_pasted_key] = p_res.image_data
+            except Exception:
+                pass
+
+            col_pc1, col_pc2 = st.columns([1.2, 1])
+            with col_pc1:
+                if st.button("📥 Đọc Clipboard máy tính", key="prac_local_clip", help="Đọc trực tiếp ảnh đang lưu trong bộ nhớ tạm Windows"):
+                    try:
+                        from PIL import ImageGrab
+                        clip_img = ImageGrab.grabclipboard()
+                        if clip_img is not None:
+                            if isinstance(clip_img, list) and len(clip_img) > 0:
+                                from PIL import Image
+                                p = Path(clip_img[0])
+                                if p.suffix.lower() in [".png", ".jpg", ".jpeg", ".webp"]:
+                                    st.session_state[prac_pasted_key] = Image.open(p)
+                                    st.toast("✅ Đã lấy ảnh file từ Clipboard!")
+                                    st.rerun()
+                            elif hasattr(clip_img, "save"):
+                                st.session_state[prac_pasted_key] = clip_img
+                                st.toast("✅ Đã lấy ảnh chụp từ Clipboard!")
+                                st.rerun()
+                        else:
+                            st.warning("Clipboard chưa có ảnh! Hãy chụp màn hình (`Win + Shift + S`) rồi thử lại.")
+                    except Exception:
+                        pass
+            with col_pc2:
+                if st.session_state.get(prac_pasted_key) is not None:
+                    if st.button("❌ Bỏ ảnh dán", key="prac_clear_paste"):
+                        del st.session_state[prac_pasted_key]
+                        st.rerun()
+
+            if uploaded_prac_img is not None:
+                image_data = uploaded_prac_img
+            elif st.session_state.get(prac_pasted_key) is not None:
+                image_data = st.session_state[prac_pasted_key]
+                st.info("📌 **Đang sử dụng ảnh lấy từ Clipboard.** Xem trước bên dưới:")
         else:
             image_data = st.camera_input("Chụp ảnh bài tập:")
 
@@ -158,6 +209,9 @@ def render_practice_view():
             image_path=saved_img_filename,
             notes=notes
         )
+
+        if prac_pasted_key in st.session_state:
+            del st.session_state[prac_pasted_key]
 
         st.balloons()
         st.success("🎉 **Đã lưu thành công lượt làm bài của con!**")

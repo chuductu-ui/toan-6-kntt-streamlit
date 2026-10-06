@@ -111,17 +111,79 @@ def render_curriculum_view():
 
         pt_input_mode = st.radio(
             "Hình thức nhập dạng toán:",
-            options=["camera", "upload", "text_only"],
-            format_func=lambda x: "📷 Chụp trực tiếp bằng Camera / Webcam" if x == "camera" else ("📁 Tải file ảnh chụp đề bài từ máy tính/điện thoại" if x == "upload" else "✍️ Chỉ nhập bằng chữ (Không kèm ảnh)"),
+            options=["upload", "camera", "text_only"],
+            format_func=lambda x: "📁 Tải file ảnh hoặc Dán từ Clipboard" if x == "upload" else ("📷 Chụp trực tiếp bằng Camera / Webcam" if x == "camera" else "✍️ Chỉ nhập bằng chữ (Không kèm ảnh)"),
             horizontal=True,
             key=f"mode_pt_{main_concept['id']}"
         )
 
         pt_image_data = None
+        pasted_state_key = f"pasted_image_{main_concept['id']}"
+
         if pt_input_mode == "camera":
             pt_image_data = st.camera_input("Chụp ảnh đề bài / công thức mẫu từ sách hoặc tài liệu:", key=f"cam_add_{main_concept['id']}")
         elif pt_input_mode == "upload":
-            pt_image_data = st.file_uploader("Chọn file ảnh đề bài (PNG, JPG, JPEG):", type=["png", "jpg", "jpeg", "webp"], key=f"upload_add_{main_concept['id']}")
+            col_up1, col_up2 = st.columns([1.3, 1.1])
+            with col_up1:
+                uploaded_file = st.file_uploader(
+                    "Chọn file ảnh đề bài (PNG, JPG, JPEG):",
+                    type=["png", "jpg", "jpeg", "webp"],
+                    key=f"upload_add_{main_concept['id']}"
+                )
+            with col_up2:
+                st.markdown("**📋 Hoặc Dán ảnh từ Clipboard:**")
+                st.caption("Chụp màn hình (`Win + Shift + S`) hoặc copy ảnh rồi bấm:")
+
+                # 1. Web browser clipboard paste button (Streamlit Cloud & local)
+                try:
+                    from streamlit_paste_button import paste_image_button
+                    paste_res = paste_image_button(
+                        label="📋 Click để dán ảnh Clipboard",
+                        background_color="#1976D2",
+                        hover_background_color="#0D47A1",
+                        key=f"paste_btn_{main_concept['id']}"
+                    )
+                    if paste_res and paste_res.image_data is not None:
+                        st.session_state[pasted_state_key] = paste_res.image_data
+                except Exception as e:
+                    pass
+
+                # 2. Local OS clipboard grab button (for Windows local app)
+                col_c1, col_c2 = st.columns([1.2, 1])
+                with col_c1:
+                    if st.button("📥 Đọc Clipboard máy tính", key=f"local_clip_{main_concept['id']}", help="Đọc trực tiếp ảnh đang lưu trong bộ nhớ tạm Windows"):
+                        try:
+                            from PIL import ImageGrab
+                            clip_img = ImageGrab.grabclipboard()
+                            if clip_img is not None:
+                                if isinstance(clip_img, list) and len(clip_img) > 0:
+                                    from PIL import Image
+                                    p = Path(clip_img[0])
+                                    if p.suffix.lower() in [".png", ".jpg", ".jpeg", ".webp"]:
+                                        st.session_state[pasted_state_key] = Image.open(p)
+                                        st.toast("✅ Đã lấy ảnh file từ Clipboard!")
+                                        st.rerun()
+                                elif hasattr(clip_img, "save"):
+                                    st.session_state[pasted_state_key] = clip_img
+                                    st.toast("✅ Đã lấy ảnh chụp màn hình từ Clipboard!")
+                                    st.rerun()
+                            else:
+                                st.warning("Clipboard chưa có ảnh! Hãy chụp màn hình (`Win + Shift + S`) rồi bấm lại.")
+                        except Exception:
+                            st.info("Trên trình duyệt web, vui lòng dùng nút xanh '📋 Click để dán ảnh Clipboard'.")
+
+                with col_c2:
+                    if st.session_state.get(pasted_state_key) is not None:
+                        if st.button("❌ Bỏ ảnh dán", key=f"clear_paste_{main_concept['id']}"):
+                            del st.session_state[pasted_state_key]
+                            st.rerun()
+
+            # Assign image data from either upload or clipboard
+            if uploaded_file is not None:
+                pt_image_data = uploaded_file
+            elif st.session_state.get(pasted_state_key) is not None:
+                pt_image_data = st.session_state[pasted_state_key]
+                st.info("📌 **Đang sử dụng ảnh lấy từ Clipboard.** Xem trước bên dưới:")
 
         if pt_image_data:
             st.image(pt_image_data, caption="Xem trước ảnh đề bài mẫu", use_container_width=True)
@@ -165,6 +227,9 @@ def render_curriculum_view():
                     difficulty=new_difficulty,
                     image_path=saved_pt_img
                 )
+                if pasted_state_key in st.session_state:
+                    del st.session_state[pasted_state_key]
+
                 st.balloons()
                 st.success(f"🎉 Đã thêm thành công dạng toán: **{final_title}**!")
                 st.rerun()

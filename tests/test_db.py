@@ -162,8 +162,16 @@ def test_save_snapshot_image():
     with Image.open(saved_file) as saved_img:
         assert max(saved_img.size) <= 1600
 
-    # Cleanup test image
     saved_file.unlink(missing_ok=True)
+
+    # Test saving direct PIL Image (from clipboard paste)
+    pil_direct = Image.new("RGBA", (800, 600), color=(255, 0, 0, 128))
+    filename_pil = PracticeService.save_snapshot_image(pil_direct, "test_clipboard")
+    assert filename_pil is not None
+    assert filename_pil.endswith(".jpg")
+    saved_file_pil = Path("data/uploads") / filename_pil
+    assert saved_file_pil.exists()
+    saved_file_pil.unlink(missing_ok=True)
 
 
 def test_delete_problem_type():
